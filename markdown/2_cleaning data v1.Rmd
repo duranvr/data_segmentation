@@ -1,0 +1,143 @@
+---
+title: "Exploratória (Lending Club)"
+author: "Victor Duran"
+date: "13 de agosto de 2016"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+options(scipen = 999)
+
+source("c:/Users/Home/Google Drive/R/functions/functionsMarkdown.R", encoding = "UTF-8")
+
+dfAll <- read.table("c:/Users/Home/Google Drive/Mestrado/UFBA/Paulo/lending club data/loanAll.csv", header = TRUE, sep = ";", encoding = "UTF-8")
+
+
+```
+
+
+```{r data cleaning, echo = TRUE, message = FALSE}
+
+#Transformando de factor em numeric int_rate e revol_util
+dfAll$int_rate <- as.numeric(gsub(pattern = "%", replacement = "", dfAll$int_rate))
+dfAll$revol_util <- as.numeric(gsub(pattern = "%", replacement = "", dfAll$revol_util))
+
+#Removing emp_title, description and url
+dfAll$emp_title <- NULL
+dfAll$desc <- NULL
+dfAll$url <- NULL
+dfAll$title <- NULL
+
+#Modificando o formato das datas
+lct <- Sys.getlocale("LC_TIME")
+Sys.setlocale("LC_TIME", "C")
+dfAll$issue_d <- as.Date(paste("1-", as.character(dfAll$issue_d), sep = ""), format = "%d-%b-%Y")
+dfAll$last_pymnt_d <- as.Date(paste("1-", as.character(dfAll$last_pymnt_d), sep = ""), format = "%d-%b-%Y")
+dfAll$next_pymnt_d <- as.Date(paste("1-", as.character(dfAll$next_pymnt_d), sep = ""), format = "%d-%b-%Y")
+dfAll$earliest_cr_line <- as.Date(paste("1-", as.character(dfAll$earliest_cr_line), sep = ""), format = "%d-%b-%Y")
+dfAll$last_credit_pull_d <- as.Date(paste("1-", as.character(dfAll$last_credit_pull_d), sep = ""), format = "%d-%b-%Y")
+Sys.setlocale("LC_TIME", lct)
+
+#Transformando de fator em numérico total_il_high_credit_limit
+tmp <- dfAll$total_il_high_credit_limit
+tmp[tmp == ""] <- NA
+dfAll$total_il_high_credit_limit <- as.numeric(as.character(tmp))
+
+#Reorganizando o banco em função da data do empréstimo
+dfAll <- dfAll[order(dfAll$issue_d),]
+
+#Definindo banco apenas com condições de interesse: Charged Off e Fully Paid
+dfGB <- dfAll[dfAll$loan_status == "Charged Off" | dfAll$loan_status == "Fully Paid",]
+
+#Removendo os níveis anteriores do fator
+dfGB$loan_status <- as.factor(as.character(dfGB$loan_status))
+
+colClasses <- sapply(dfGB, class)
+names(colClasses) <- NULL
+
+paste(colClasses, collapse = "', '")
+
+
+write.table(dfGB, file = "c:/Users/Home/Google Drive/Mestrado/UFBA/Paulo/lending club data/dfGB.csv", sep = ";", row.names = FALSE, dec = ".", qmethod = "double")
+
+
+dfGB <- read.table("c:/Users/Home/Google Drive/Mestrado/UFBA/Paulo/lending club data/dfGB.csv", header = TRUE, sep = ";", encoding = "UTF-8")
+
+class(as.Date(dfGB$earliest_cr_line))
+```
+
+```{r, echo = FALSE, message = FALSE}
+
+#Definindo quais as variáveis do tipo factor
+facVars <- sapply(dfGB, function(x){
+  class(x) == "factor"})
+facVars <- which(facVars)
+
+#Retirando zip code (muito granularizado)
+facVars <- facVars[-c(10)]
+
+numVars <- sapply(dfGB, function(x){
+  (class(x) == "integer") | (class(x) == "numeric")})
+numVars <- which(numVars)
+
+```
+
+```{r}
+
+hist(which(dfGB$loan_status == "Fully Paid"))
+hist(which(dfGB$loan_status == "Charged Off"))
+
+```
+
+```{r, echo = FALSE, message = FALSE}
+
+facTables <- list(NA)
+
+count <- 1
+for(i in facVars){
+  facTables[[count]] <- table.desc(dfGB[,i])
+  count <- count+1
+}
+names(facTables) <- names(facVars)
+
+descTableTitle <- c("Loan term",
+                    "Previously assigned credit grade",
+                    "Previously assigned credit sub-grade",
+                    "Employment length",
+                    "Type of home ownership",
+                    "Verification Status",
+                    "Loan status (DV)",
+                    "Payment plan",
+                    "Purpose for taking the loan",
+                    "Address State (US)",
+                    "Initial list status",
+                    "Application type",
+                    "Verif application status")
+
+numTable <- numeric.desc(dfGB[,numVars])
+
+```
+
+###Não numéricas:
+
+
+```{r desc_categoric, echo = FALSE, results = 'asis'}
+
+for(i in 1:length(facVars)){
+  rmarkdownTable(facTables[[i]], descTableTitle[i])
+  
+}
+
+```
+
+
+###Numéricas:
+```{r desc numeric, echo = FALSE, message=FALSE, results = 'asis'}
+
+rmarkdownTable(numTable)
+
+```
+
+
+
+O que eu preciso agora é algo que compare as frequências de goods e bads para ver como fica em cada um dos grupos
