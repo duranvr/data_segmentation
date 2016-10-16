@@ -14,7 +14,7 @@ options(scipen = 999)
 library(partykit) #Para categorizar usando árvores
 
 source("c:/Users/duranvr/Google Drive/R/functions/functionsMarkdown (1).R", encoding = "UTF-8")
-
+source("c:/Users/duranvr/Documents/data_segmentation/functions/categorize_impact.R", encoding = "UTF-8")
 ```
 
 
@@ -76,49 +76,15 @@ source("c:/Users/duranvr/Google Drive/R/functions/functionsMarkdown (1).R", enco
 dfGB <- read.table("c:/Users/duranvr/Google Drive/Mestrado/UFBA/Paulo/lending club data/dfGB.csv", header = TRUE, sep = ";", encoding = "UTF-8", colClasses = c('integer', 'integer', 'integer', 'integer', 'numeric', 'factor', 'numeric', 'numeric', 'factor', 'factor', 'factor', 'factor', 'numeric', 'factor', 'Date', 'factor', 'factor', 'factor', 'factor', 'factor', 'numeric', 'integer', 'Date', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'numeric', 'integer', 'factor', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'Date', 'numeric', 'Date', 'Date', 'integer', 'integer', 'integer', 'factor', 'numeric', 'numeric', 'factor', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'numeric', 'integer', 'integer', 'integer', 'numeric', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'numeric', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'numeric', 'numeric', 'integer', 'integer', 'integer', 'integer', 'integer', 'numeric'))
 
 # str(dfGB)
+
+#### Removendo variáveis que não são obtidas no momento do pedido de empréstimo ####
+####FAZER
+posData <- c("recoveries", "collection_recovery_fee", "total_rec_late_fee",
+             "total_pymnt", "total_rec_prncp", "total_pymnt_inv")
+
 ```
 
 ```{r dt engineering}
-
-#NEW FUNC
-treeCat <- function(x, y, maxCats = 20, maxdepth = 3){
-  # x <- dfGB$int_rate
-  # y <- dfGB$loan_status
-  #Carregando pacote para encaixar modelo de árvores condicionais
-  require(partykit)
-  
-  #Encaixando modelo
-  fitTree <- ctree(y~x, control = ctree_control(maxdepth = maxdepth))
-  
-  nNodes <- length(nodeids(fitTree))
-  
-  #Avaliando se não houve splits ou se houve splits demais
-  if(nNodes == 1){
-    return("Sem splits")
-  } else if (nNodes > maxCats){
-    return(paste("Muitas categorias: ", nNodes))
-  }
-  
-  # plot(fitTree)
-  
-  #Inicianco vars do loop para identificar onde estão os splits
-  treeSplits <- numeric()
-  count <- 1
-  for(i in (1:nNodes)[-nodeids(fitTree, terminal = TRUE)]){
-    treeSplits[count] <- split_node(node_party(fitTree[[i]]))$breaks
-    count <- count+1
-  }
-  
-  #Definindo breaks para func cut()
-  breaks <- unique(c(min(x, na.rm = TRUE)-1, 
-                     sort(treeSplits),
-                     max(x, na.rm = TRUE)+1))
-  
-  #Categorizando com base nos breaks
-  xCat <- cut(x, breaks = breaks, right = TRUE, dig.lab = 10)
-  
-  return(xCat)
-}
 
 numVars <- detectNum(dfGB)
 
@@ -136,28 +102,6 @@ nFactors <- sapply(dfCat, function(x){
 table(nFactors)
 
 ```
-
-```{r}
-
-#TODO: criar e calcular métrica de diferença entre com e sem split.
-crossImpact <- function(vi, vd){
-  # vi <- dfCat$loan_amnt
-  # vd <- dfGB$loan_status
-  
-  minN <- min(table(vi))
-  maxN <- max(table(vi))
-  
-  propsVD <- prop.table(table(vd))
-  propsCross <- table.desc(vi, vd)[1:length(levels(vi)),c(4:(4+(length(levels(vd))-1)))]*.01
-  
-  
-  out <- round(sqrt(mean((sweep(propsCross, 2, propsVD))^2))*100, 2)
-  
-  return(c(impact = out, minN = minN, maxN = maxN, nLevels = length(levels(vi))))
-}
-
-```
-
 
 ```{r, echo = FALSE, message = FALSE}
 
@@ -190,9 +134,6 @@ impacts[,indexImp]
 
 
 ```{r}
-
-hist(which(dfGB$loan_status == "Fully Paid"))
-hist(which(dfGB$loan_status == "Charged Off"))
 
 ```
 
