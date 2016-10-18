@@ -76,11 +76,13 @@ source("c:/Users/duranvr/Documents/data_segmentation/functions/categorize_impact
 dfGB <- read.table("c:/Users/duranvr/Google Drive/Mestrado/UFBA/Paulo/lending club data/dfGB.csv", header = TRUE, sep = ";", encoding = "UTF-8", colClasses = c('integer', 'integer', 'integer', 'integer', 'numeric', 'factor', 'numeric', 'numeric', 'factor', 'factor', 'factor', 'factor', 'numeric', 'factor', 'Date', 'factor', 'factor', 'factor', 'factor', 'factor', 'numeric', 'integer', 'Date', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'numeric', 'integer', 'factor', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'Date', 'numeric', 'Date', 'Date', 'integer', 'integer', 'integer', 'factor', 'numeric', 'numeric', 'factor', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'numeric', 'integer', 'integer', 'integer', 'numeric', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'numeric', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'numeric', 'numeric', 'integer', 'integer', 'integer', 'integer', 'integer', 'numeric'))
 
 # str(dfGB)
-
 #### Removendo variáveis que não são obtidas no momento do pedido de empréstimo ####
-####FAZER
 posData <- c("recoveries", "collection_recovery_fee", "total_rec_late_fee",
-             "total_pymnt", "total_rec_prncp", "total_pymnt_inv")
+             "total_pymnt", "total_rec_prncp", "total_pymnt_inv", "last_pymnt_amnt")
+
+names(dfGB)[grep("last", names(dfGB))]
+
+dfGB <- dfGB[,!(names(dfGB) %in% posData)]
 
 ```
 
@@ -129,11 +131,6 @@ indexImp <- order(impacts[1,], decreasing = TRUE)
 
 impacts[,indexImp]
 
-
-```
-
-
-```{r}
 
 ```
 
