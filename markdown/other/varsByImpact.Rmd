@@ -1,0 +1,86 @@
+---
+title: "Tabela de Impactos"
+author: "Victor"
+date: "30 de outubro de 2016"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Tabela 4 ** Variáveis organizadas por impacto
+
+varNames|impact|minN|maxN|nLevels
+-|-|-|-|-
+loan_status|58.91|65780|283059|2
+recoveries|57.78|37173|311666|2
+collection_recovery_fee|57.76|36025|312814|2
+total_rec_late_fee|50.92|574|339359|3
+total_pymnt|44.06|4299|203263|4
+total_rec_prncp|39.18|32855|213241|4
+total_pymnt_inv|31.18|15805|202096|4
+last_pymnt_amnt|20.35|2531|212497|4
+sub_grade|16.26|271|24075|35
+grade|15.72|2686|103315|7
+int_rate|10.98|44622|106576|4
+verification_status_joint|9.93|4|69198|4
+term|8.61|80379|268460|2
+home_ownership|7.9|1|173031|6
+dti|5.62|45799|120110|4
+mo_sin_old_rev_tl_op|5.07|8223|117097|4
+bc_open_to_buy|4.87|38978|109671|4
+id|4.63|19333|191155|4
+member_id|4.61|19325|188297|4
+total_rec_int|4.32|3001|296712|4
+purpose|4.23|326|206409|14
+total_rev_hi_lim|4.19|9013|118632|4
+bc_util|4.17|48037|99120|4
+num_bc_tl|4.14|3711|162975|4
+revol_util|3.95|50661|137072|4
+avg_cur_bal|3.72|37037|152407|4
+mo_sin_old_il_acct|3.66|11182|165304|4
+mths_since_recent_bc_dlq|3.65|3966|57361|3
+num_rev_tl_bal_gt_0|3.64|27824|94413|4
+percent_bc_gt_75|3.64|64245|93263|4
+addr_state|3.63|6|57768|51
+annual_inc|3.61|67402|122353|4
+tot_hi_cred_lim|3.59|40586|136904|4
+num_actv_rev_tl|3.55|28408|94472|4
+installment|3.54|5536|196403|4
+total_bc_limit|3.44|32569|108601|4
+tot_cur_bal|3.25|38117|156311|4
+acc_open_past_24mths|3.16|44273|90178|4
+loan_amnt|3.14|24416|124538|4
+funded_amnt|3.14|24236|124797|4
+verification_status|3.11|108238|126230|3
+funded_amnt_inv|3.06|24149|116268|4
+num_actv_bc_tl|2.97|14198|112505|4
+mo_sin_rcnt_rev_tl_op|2.93|16016|185626|4
+mort_acc|2.89|91612|119576|3
+tax_liens|2.79|6391|342409|2
+mo_sin_rcnt_tl|2.77|33462|107016|4
+revol_bal|2.72|7110|278528|3
+mths_since_recent_revol_delinq|2.7|7723|75765|3
+mths_since_recent_bc|2.46|55590|185996|3
+mths_since_recent_inq|2.46|25874|97432|4
+inq_last_6mths|2.43|73343|175711|3
+num_tl_op_past_12m|2.41|45267|100926|4
+mths_since_last_major_derog|2.4|10636|62280|2
+mths_since_last_delinq|2.37|14192|121699|3
+emp_length|2.31|13313|108214|12
+num_il_tl|2.1|9031|188076|3
+num_rev_accts|1.99|16855|142527|4
+mths_since_last_record|1.96|21176|26090|2
+delinq_2yrs|1.92|18567|289964|3
+num_tl_90g_dpd_24m|1.87|15545|268209|2
+total_bal_ex_mort|1.57|11430|243858|3
+num_sats|1.48|12417|163155|4
+pub_rec|1.45|6030|302243|3
+num_op_rev_tl|1.44|29777|109891|4
+open_acc|1.39|13238|186598|4
+total_acc|1.17|75785|110253|4
+total_il_high_credit_limit|0.88|39420|169817|3
+initial_list_status|0.18|116402|232437|2
+application_type|0.08|32|348807|2
+pymnt_plan|0|348839|348839|1

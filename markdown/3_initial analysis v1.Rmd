@@ -78,21 +78,41 @@ dfGB <- read.table("c:/Users/duranvr/Google Drive/Mestrado/UFBA/Paulo/lending cl
 # str(dfGB)
 #### Removendo variáveis que não são obtidas no momento do pedido de empréstimo ####
 posData <- c("recoveries", "collection_recovery_fee", "total_rec_late_fee",
-             "total_pymnt", "total_rec_prncp", "total_pymnt_inv", "last_pymnt_amnt")
+             "total_pymnt", "total_rec_prncp", "total_pymnt_inv", "last_pymnt_d",
+             "last_pymnt_amnt", "last_credit_pull_d", "mths_since_last_major_derog", 
+             "inq_last_12m")
 
-names(dfGB)[grep("last", names(dfGB))]
+names(dfGB)
+leaveNames <- c("id", "member_id", "loan_amnt", "funded_amnt", "funded_amnt_inv", "term", "int_rate", "installment", "grade", "sub_grade", "emp_length", "home_ownership", "annual_inc", "verification_status", "issue_d", "loan_status", "pymnt_plan", "purpose", "zip_code", "addr_state", "dti", "delinq_2yrs", "earliest_cr_line", "inq_last_6mths", "mths_since_last_delinq", "mths_since_last_record", "open_acc", "pub_rec", "revol_bal", "revol_util", "total_acc", "initial_list_status", "out_prncp", "out_prncp_inv", "total_pymnt", "total_pymnt_inv", "total_rec_prncp", "total_rec_int", "total_rec_late_fee", "recoveries", "collection_recovery_fee", "last_pymnt_d", "last_pymnt_amnt", "next_pymnt_d", "last_credit_pull_d", "collections_12_mths_ex_med", "mths_since_last_major_derog", "policy_code", "application_type", "annual_inc_joint", "dti_joint", "verification_status_joint", "acc_now_delinq", "tot_coll_amt", "tot_cur_bal", "open_acc_6m", "open_il_6m", "open_il_12m", "open_il_24m", "mths_since_rcnt_il", "total_bal_il", "il_util", "open_rv_12m", "open_rv_24m", "max_bal_bc", "all_util", "total_rev_hi_lim", "inq_fi", "total_cu_tl", "inq_last_12m")
 
-dfGB <- dfGB[,!(names(dfGB) %in% posData)]
+names(dfGB)[!(names(dfGB) %in% leaveNames)]
+
+# dfGB <- dfGB[,!(names(dfGB) %in% posData)]
+
+#### Separação treino-validação-teste ####
+
+plot(dfGB$issue_d)
+hist(dfGB$issue_d, breaks = "months")
+hist(dfGB$issue_d, breaks = "years")
+
+indexTrain <- dfGB$issue_d < "2014-01-01"
+indexValid <- (dfGB$issue_d < "2015-01-01" & dfGB$issue_d >= "2014-01-01")
+indexTest <- (dfGB$issue_d < "2016-01-01" & dfGB$issue_d >= "2015-01-01")
+
+dfGBTrain <- dfGB[indexTrain,]
+dfGBValid <- dfGB[indexValid,]
+dfGBTest <- dfGB[indexTest,]
+
 
 ```
 
 ```{r dt engineering}
 
-numVars <- detectNum(dfGB)
+numVars <- detectNum(dfGBTrain)
 
-dfCat <- rep(NA, nrow(dfGB))
+dfCat <- rep(NA, nrow(dfGBTrain))
 for(i in 1:length(numVars)){
-  tmp <- treeCat(dfGB[,numVars[i]], dfGB$loan_status, maxdepth = 2)
+  tmp <- treeCat(dfGBTrain[,numVars[i]], dfGBTrain$loan_status, maxdepth = 2)
   dfCat <- data.frame(dfCat, tmp)
   names(dfCat)[i+1] <- names(numVars)[i]
 }
@@ -101,6 +121,8 @@ nFactors <- sapply(dfCat, function(x){
   length(table(x))
 })
 
+#TODO: Precisa usar apenas os critérios do train set para definir os cortes e replicar as divisões para o valid e test set
+
 table(nFactors)
 
 ```
@@ -108,14 +130,14 @@ table(nFactors)
 ```{r, echo = FALSE, message = FALSE}
 
 #Definindo quais as variáveis do tipo factor
-facVars <- sapply(dfGB, function(x){
+facVars <- sapply(dfGBTrain, function(x){
   class(x) == "factor"})
 facVars <- which(facVars)
 
 #Retirando zip code (muito granularizado)
 facVars <- facVars[-c(10)]
 
-numVars <- sapply(dfGB, function(x){
+numVars <- sapply(dfGBTrain, function(x){
   (class(x) == "integer") | (class(x) == "numeric")})
 numVars <- which(numVars)
 
@@ -124,26 +146,32 @@ numVars <- which(numVars)
 
 ```{r}
 
-impacts <- sapply(data.frame(dfCat[,nFactors > 1], dfGB[,facVars]), 
-                  crossImpact, vd = dfGB$loan_status)
+impacts <- sapply(data.frame(dfCat[,nFactors > 1], dfGBTrain[,facVars]), 
+                  crossImpact, vd = dfGBTrain$loan_status)
 
 indexImp <- order(impacts[1,], decreasing = TRUE)
 
-impacts[,indexImp]
+impactDf <- data.frame(varNames = colnames(impacts[,indexImp]), t(impacts[,indexImp]), stringsAsFactors = FALSE)
+
+rmarkdownTable(impactDf)
 
 
 ```
 
 ```{r, echo = FALSE, message = FALSE}
 #Factor Tables
-facTables <- list(NA)
+facTablesTrain <- list(NA)
+facTablesValid <- list(NA)
+facTablesTest <- list(NA)
 
 count <- 1
 for(i in facVars){
-  facTables[[count]] <- table.desc(dfGB[,i])
+  facTablesTrain[[count]] <- table.desc(dfGBTrain[,i])
+  facTablesValid[[count]] <- table.desc(dfGBValid[,i]) 
+  facTablesTest[[count]] <- table.desc(dfGBTest[,i])
   count <- count+1
 }
-names(facTables) <- names(facVars)
+names(facTablesTrain) <- names(facTablesValid) <- names(facTablesTest) <- names(facVars)
 
 descTableTitle <- c("Loan term",
                     "Previously assigned credit grade",
@@ -160,17 +188,23 @@ descTableTitle <- c("Loan term",
                     "Verif application status")
 
 #Numeric Table
-numTable <- numeric.desc(dfGB[,numVars])
+numTableTrain <- numeric.desc(dfGBTrain[,numVars])
+numTableValid <- numeric.desc(dfGBValid[,numVars])
+numTableTest <- numeric.desc(dfGBValid[,numVars])
 
 #Cross tables
-facCrossTables <- list(NA)
+facCrossTablesTrain <- list(NA)
+facCrossTablesValid <- list(NA)
+facCrossTablesTest <- list(NA)
 
 count <- 1
 for(i in facVars){
-  facCrossTables[[count]] <- table.desc(dfGB[,i], dfGB$loan_status)
+  facCrossTablesTrain[[count]] <- table.desc(dfGBTrain[,i], dfGBTrain$loan_status)
+  facCrossTablesValid[[count]] <- table.desc(dfGBValid[,i], dfGBValid$loan_status)
+  facCrossTablesTest[[count]] <- table.desc(dfGBTest[,i], dfGBTest$loan_status)
   count <- count+1
 }
-names(facCrossTables) <- names(facVars)
+names(facCrossTablesTrain) <- names(facCrossTablesValid) <- names(facCrossTablesTest) <- names(facVars)
 
 descCrossTableTitle <- c("Loan term",
                          "Previously assigned credit grade",
@@ -194,8 +228,9 @@ descCrossTableTitle <- c("Loan term",
 ```{r desc_categoric, echo = FALSE, results = 'asis'}
 
 for(i in 1:length(facVars)){
-  rmarkdownTable(facTables[[i]], descTableTitle[i])
-  
+  rmarkdownTable(facTablesTrain[[i]], paste("Train:", descTableTitle[i]))
+  rmarkdownTable(facTablesValid[[i]], paste("Train:", descTableTitle[i]))
+  rmarkdownTable(facTablesTest[[i]], paste("Train:", descTableTitle[i]))
 }
 
 ```
@@ -204,7 +239,11 @@ for(i in 1:length(facVars)){
 ###Numéricas:
 ```{r desc numeric, echo = FALSE, message=FALSE, results = 'asis'}
 
-rmarkdownTable(numTable)
+rmarkdownTable(numTableTrain, titulo = "Numeric descriptives train set")
+
+rmarkdownTable(numTableValid, titulo = "Numeric descriptives validation set")
+
+rmarkdownTable(numTableTest, titulo = "Numeric descriptives test set")
 
 ```
 
@@ -214,9 +253,27 @@ rmarkdownTable(numTable)
 ```{r, echo = FALSE, message = FALSE, results = "asis"}
 
 for(i in 1:length(facVars)){
-  rmarkdownTable(facCrossTables[[i]], descCrossTableTitle[i])
+  rmarkdownTable(facCrossTablesTrain[[i]], paste("Train: ", descCrossTableTitle[i]))
+  rmarkdownTable(facCrossTablesValid[[i]], paste("Validation: ", descCrossTableTitle[i]))
+  rmarkdownTable(facCrossTablesTest[[i]], paste("Test: ", descCrossTableTitle[i]))
 }
 
+```
+
+```{r segmentation, echo = TRUE}
+#Distributions for each segment
+##Train
+table(dfGBTrain$term, dfCat$loan_amnt[indexTrain])
+
+##Valid
+table(dfGBValid$term, dfCat$loan_amnt[indexValid])
+
+##Test
+table(dfGBTest$term, dfCat$loan_amnt[indexTest])
 
 ```
+
+Note that in 2015 no 60 months customer took loans below 8k.
+
+Should we use 7 categories only?
 
